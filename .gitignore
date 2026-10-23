@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# 日志
+*.log
+macos/logs/
+
+# m1ddc 构建产物（vendored 源码自带 .gitignore，这里再兜底）
+macos/m1ddc-src/m1ddc
+macos/m1ddc-src/.objects/
+
+# 未来 GUI（Tauri/Electron 等）
+gui/node_modules/
+gui/dist/
+gui/target/
+
+# 未来 Windows 构建产物
+windows/**/*.exe
+windows/**/obj/
+windows/**/bin/
