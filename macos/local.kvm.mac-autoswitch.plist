@@ -7,7 +7,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
-    <string>/Users/awstme/Documents/kvm-ddc-switcher/macos/kvm-watch.sh</string>
+    <string>/Users/awstme/Library/Application Support/kvm-ddc-switcher/kvm-watch.sh</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
@@ -16,8 +16,8 @@
   <key>ProcessType</key>
   <string>Background</string>
   <key>StandardOutPath</key>
-  <string>/Users/awstme/Documents/kvm-ddc-switcher/macos/logs/launchd.out.log</string>
+  <string>/Users/awstme/Library/Application Support/kvm-ddc-switcher/logs/launchd.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/awstme/Documents/kvm-ddc-switcher/macos/logs/launchd.err.log</string>
+  <string>/Users/awstme/Library/Application Support/kvm-ddc-switcher/logs/launchd.err.log</string>
 </dict>
 </plist>

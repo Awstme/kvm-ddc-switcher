@@ -19,6 +19,11 @@ LOG="${LOG:-$DIR/logs/kvm-auto-switch.log}"
 
 mkdir -p "$(dirname "$LOG")"
 
+# 日志超过 1 MB 时在启动时轮转一次
+if [[ -f "$LOG" ]] && (( $(stat -f%z "$LOG") > 1048576 )); then
+  mv -f "$LOG" "$LOG.1"
+fi
+
 log() {
   local line
   line="$(date '+%Y-%m-%d %H:%M:%S') $*"

@@ -41,6 +41,11 @@ if ($logDir -and -not (Test-Path -LiteralPath $logDir)) {
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 }
 
+# 日志超过 1 MB 时在启动时轮转一次
+if ((Test-Path -LiteralPath $LOG) -and ((Get-Item -LiteralPath $LOG).Length -gt 1MB)) {
+    Move-Item -LiteralPath $LOG -Destination ($LOG + ".1") -Force
+}
+
 function Write-Log([string]$Message) {
     $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss") + " " + $Message
     Add-Content -LiteralPath $LOG -Value $line -Encoding UTF8

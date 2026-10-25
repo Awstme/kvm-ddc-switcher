@@ -98,27 +98,29 @@ ioreg -p IOUSB -w0 -d 3                    # 找 KVM 的 USB Hub 产品名
 # 后台
 nohup ./macos/kvm-watch.sh >/dev/null 2>&1 &
 
-# 日志
+# 日志（超过 1 MB 时脚本下次启动自动轮转为 .1）
 tail -f macos/logs/kvm-auto-switch.log
 
-# 停止
+# 停止（若已装 LaunchAgent 会被自动拉起，见第 4 节）
 pkill -f kvm-watch.sh
 ```
 
 切到 Windows 后要回到 Mac 时：Windows 端代理在运行会自动切回；否则用显示器 OSD 切回 DP1。
 
-### 4. 开机自启（可选）
-
-plist 里是绝对路径，移动仓库后需相应修改。
+### 4. 开机自启（推荐）
 
 ```sh
-cp macos/local.kvm.mac-autoswitch.plist ~/Library/LaunchAgents/
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.kvm.mac-autoswitch.plist
+./macos/install-autostart.sh
 
-# 卸载
-launchctl bootout gui/$(id -u)/local.kvm.mac-autoswitch
-rm ~/Library/LaunchAgents/local.kvm.mac-autoswitch.plist
+# 停止并卸载（保留日志）
+./macos/install-autostart.sh --uninstall
 ```
+
+背景：launchd 拉起的进程受 macOS TCC 限制，**读不了 `~/Documents` 下的文件**，所以安装脚本会把 `kvm-watch.sh`、`config.env`、`m1ddc` 部署到 `~/Library/Application Support/kvm-ddc-switcher/` 再装载服务（`KeepAlive`，进程挂了约 10 秒后自动拉起）。
+
+- 改完仓库里的脚本或 `config.env` 后，需要重新运行一次安装脚本才生效
+- 此模式日志在 `~/Library/Application Support/kvm-ddc-switcher/logs/`
+- 装了 LaunchAgent 后 `pkill` 会被自动拉起；停止用 `launchctl bootout gui/$(id -u)/local.kvm.mac-autoswitch`
 
 ---
 
@@ -158,18 +160,22 @@ powershell -ExecutionPolicy Bypass -File .\kvm-watch.ps1 -DryRun
 powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\kvm-watch.ps1
 ```
 
-日志：`windows\logs\kvm-auto-switch.log`（去抖/日志语义与 macOS 端一致）。
+日志：`windows\logs\kvm-auto-switch.log`（去抖/日志语义与 macOS 端一致；超过 1 MB 时下次启动自动轮转为 `.1`）。
 
-### 3. 后台常驻（计划任务）
+### 3. 登录自启（计划任务）
 
-用 `/IT` 把脚本放进交互会话跑；注销/重启后需重建（登录自启在 Phase 2 标准化）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-autostart.ps1
+
+# 卸载
+powershell -ExecutionPolicy Bypass -File .\install-autostart.ps1 -Uninstall
+```
+
+注册名为 `kvm-watch` 的计划任务：用户登录时在交互会话里启动（DDC 需要桌面会话），允许电池供电、不限运行时长、异常退出最多重启 3 次。
 
 ```cmd
-schtasks /Create /F /TN kvm-watch /TR "powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\path\to\kvm-ddc-switcher\kvm-watch.ps1" /SC ONCE /ST 00:00 /IT
-schtasks /Run /TN kvm-watch
-
-:: 停止
 schtasks /End /TN kvm-watch
+schtasks /Run /TN kvm-watch
 ```
 
 ---
@@ -191,7 +197,8 @@ schtasks /End /TN kvm-watch
 ## 已知限制
 
 - **只有当前输入源的主机能发有效 DDC**：所以每台主机只负责「切出」，双向自动切换需要两端各跑一个代理——macOS 与 Windows 端均已实现。
-- **Windows 的 DDC 必须跑在交互桌面会话**：sshd/服务会话（session 0）枚举不到显示器（`-Probe` 会报 `no physical monitors visible`），常驻请用计划任务（`/IT`）放到登录用户会话里。
+- **Windows 的 DDC 必须跑在交互桌面会话**：sshd/服务会话（session 0）枚举不到显示器（`-Probe` 会报 `no physical monitors visible`），常驻请用计划任务放到登录用户会话里。
+- **macOS launchd 受 TCC 限制读不了 `~/Documents`**：自启安装脚本会把运行副本部署到 `~/Library/Application Support/kvm-ddc-switcher/`，改仓库文件后要重跑安装脚本。
 - **macOS 外接屏重识别**：在这套硬件上，显示器切走再切回后，macOS 有时不会自动重新识别外接屏，可能需要重插显示线或重启。这是反向自动化之后仍需长期观察的可靠性问题。
 - **m1ddc 仅支持 Apple Silicon**，不支持 Intel Mac。
 - 显示器需支持并开启 **DDC/CI**。
@@ -204,7 +211,8 @@ schtasks /End /TN kvm-watch
 - [x] macOS：USB Hub 检测 KVM + m1ddc 发 DDC 自动切出
 - [x] Windows 端代理：PnP 检测 KVM + `dxva2` `SetVCPFeature`（VCP `0x60`）切出；Mac→Win→Mac 双向链路已实测（2026-10-24）
 - [ ] 图形界面：Tauri 托盘应用，做配置/状态/手动切换，包装各平台的常驻守护进程
-- [ ] 安装打包：macOS LaunchAgent（已有 plist）、Windows 计划任务；公证/签名与安装器
+- [x] 自启：macOS LaunchAgent（KeepAlive + TCC 部署）、Windows 登录触发计划任务（允许电池、失败重启）；日志轮转
+- [ ] 安装打包：公证/签名与安装器
 - [ ] 排查 macOS 外接屏切回后的重识别可靠性（一次实测未复现，继续观察）
 
 ---
