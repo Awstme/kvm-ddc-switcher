@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KVM DDC Switcher</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>KVM DDC Switcher</h1>
+    <div>
+      <span id="badge-daemon" class="badge">守护进程：…</span>
+      <span id="badge-input" class="badge">预计输入源：…</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="row">
+        <button id="btn-switch" class="primary">手动切到 Windows（DP2）</button>
+        <button id="btn-restart">重启守护进程</button>
+        <label class="toggle"><input type="checkbox" id="chk-autostart" /> 开机自启</label>
+      </div>
+      <p id="last-action" class="muted small">最近动作：…</p>
+      <p id="msg" class="msg hidden"></p>
+    </section>
+
+    <section class="card">
+      <div class="row space">
+        <h2>日志</h2>
+        <div class="row">
+          <label class="muted small"><input type="checkbox" id="chk-tail" checked /> 自动刷新</label>
+          <button id="btn-log-refresh" class="small">刷新</button>
+        </div>
+      </div>
+      <pre id="log" class="log">…</pre>
+    </section>
+
+    <section class="card">
+      <div class="row space">
+        <h2>配置（config.env）</h2>
+        <div class="row">
+          <button id="btn-config-save" class="small">保存并重启</button>
+        </div>
+      </div>
+      <textarea id="config" spellcheck="false" placeholder="加载中…"></textarea>
+    </section>
+
+    <details class="card">
+      <summary>路径与说明</summary>
+      <p id="paths" class="muted small"></p>
+      <p class="muted small">
+        手动切换通过守护进程执行（命令文件通道），GUI 不直接发 DDC；
+        预计输入源根据守护进程日志推断。显示器的实际输入源以 OSD 为准。
+      </p>
+    </details>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>

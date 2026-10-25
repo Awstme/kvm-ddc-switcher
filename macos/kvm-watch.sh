@@ -16,6 +16,7 @@ M1DDC="${M1DDC:-$DIR/m1ddc-src/m1ddc}"
 WINDOWS_INPUT="${WINDOWS_INPUT:-16}"
 DISPLAY_SELECTOR="${DISPLAY_SELECTOR:-}"
 LOG="${LOG:-$DIR/logs/kvm-auto-switch.log}"
+CMD_FILE="${CMD_FILE:-$DIR/command}"
 
 mkdir -p "$(dirname "$LOG")"
 
@@ -61,11 +62,33 @@ switch_to_windows() {
   log "DDC set input $WINDOWS_INPUT rc=$rc ${out//$'\n'/ }"
 }
 
+# GUI 手动切换通道：命令文件由 GUI 写入，守护进程消费后删除
+handle_command() {
+  [[ -f "$CMD_FILE" ]] || return 0
+  local cmd
+  cmd="$(cat "$CMD_FILE" 2>/dev/null)"
+  rm -f "$CMD_FILE"
+  case "$cmd" in
+    switch-to-windows)
+      if kvm_present; then
+        log "manual command: switch-to-windows"
+        switch_to_windows
+      else
+        log "manual command ignored: KVM not on Mac"
+      fi
+      ;;
+    *)
+      log "unknown command ignored: $cmd"
+      ;;
+  esac
+}
+
 last_state=""
 pending_state=""
 pending_count=0
 
 while true; do
+  handle_command
   if kvm_present; then
     current_state="present"
   else

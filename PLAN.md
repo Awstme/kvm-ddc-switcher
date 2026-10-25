@@ -6,7 +6,7 @@
 
 - `macos/`：已实测（KVM 离开 Mac 1–2 秒后 DDC 切到 DP2）
 - `windows/`：`kvm-watch.ps1` 已实测（KVM 离开 Windows 后 DDC 切回 DP1）；2026-10-24 Mac→Win→Mac 双向全链路验证通过
-- `gui/`：占位
+- `gui/`：Tauri 托盘 GUI 骨架已可运行（Phase 3 进行中）
 - 硬件约束：只有当前输入源的主机能发有效 DDC，因此「切出」由即将失去 KVM 的那台负责，双向切换需要两端各跑一个代理
 
 ## Phase 1 — Windows 端代理（✅ 已完成）
@@ -22,11 +22,12 @@
 - ✅ 自启标准化（2026-10-25）：macOS LaunchAgent（TCC 规避部署 + KeepAlive）、Windows 登录触发计划任务（允许电池、失败重启、不限时长）；日志 1MB 启动时轮转
 - 待办：脚本级失败重试、两端统一配置格式、缓解 macOS 外接屏重识别问题
 
-## Phase 3 — GUI 壳（Tauri 托盘应用）
+## Phase 3 — GUI 壳（Tauri 托盘应用，进行中）
 
-- Tauri（Rust + Web UI），托盘常驻
-- 最小功能集：当前输入源状态、手动切换按钮、日志查看、配置编辑（显示器/DP 映射/防抖参数）、自启开关
-- GUI 只调两端守护进程，不直接碰 DDC
+- ✅ 骨架与后端（2026-10-25）：Tauri 2 + 原生 HTML/JS（零前端构建），托盘常驻（打开窗口/手动切换/退出），关窗即隐藏
+- ✅ 已实现：守护进程状态与预计输入源（由日志推断）、日志查看（自动刷新）、`config.env` 编辑（保存后重启守护进程）、自启开关（装/卸 LaunchAgent）、手动切到 Windows
+- ✅ 守护进程新增命令文件通道 `switch-to-windows`（KVM 不在本机时忽略），实测通道正常且不误切屏；GUI 不直接碰 DDC
+- 待做：手动切换与保存配置的实机点验、托盘/窗口细节打磨；Windows 版需在 Windows 上构建（依赖 MSVC 工具链）
 
 ## Phase 4 — 分发（远期）
 

@@ -9,10 +9,12 @@ macos/logs/
 macos/m1ddc-src/m1ddc
 macos/m1ddc-src/.objects/
 
-# 未来 GUI（Tauri/Electron 等）
+# GUI（Tauri）
 gui/node_modules/
 gui/dist/
 gui/target/
+gui/src-tauri/target/
+gui/src-tauri/gen/
 
 # 未来 Windows 构建产物
 windows/**/*.exe
