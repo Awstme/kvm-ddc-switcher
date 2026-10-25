@@ -124,7 +124,7 @@ fn find_repo_root() -> Option<PathBuf> {
     }
     let exe = std::env::current_exe().ok()?;
     let mut dir = exe.parent()?.to_path_buf();
-    for _ in 0..8 {
+    for _ in 0..12 {
         if dir.join("macos/install-autostart.sh").exists() {
             return Some(dir);
         }
@@ -250,8 +250,13 @@ fn main() {
             let quit = MenuItemBuilder::with_id("quit", "退出").build(app)?;
             let menu = MenuBuilder::new(app).items(&[&show, &switch, &quit]).build()?;
 
-            let mut tray = TrayIconBuilder::with_id("main-tray")
+            // 菜单栏用单色模板图标（随系统明暗自适应），不用彩色 App 图标
+            let tray_icon =
+                tauri::image::Image::from_bytes(include_bytes!("../icons/tray-template.png"))?;
+            TrayIconBuilder::with_id("main-tray")
                 .tooltip("KVM DDC Switcher")
+                .icon(tray_icon)
+                .icon_as_template(true)
                 .menu(&menu)
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app: &AppHandle, event| match event.id.as_ref() {
@@ -266,11 +271,8 @@ fn main() {
                     }
                     "quit" => app.exit(0),
                     _ => {}
-                });
-            if let Some(icon) = app.default_window_icon() {
-                tray = tray.icon(icon.clone());
-            }
-            tray.build(app)?;
+                })
+                .build(app)?;
             Ok(())
         })
         .on_window_event(|window, event| {
